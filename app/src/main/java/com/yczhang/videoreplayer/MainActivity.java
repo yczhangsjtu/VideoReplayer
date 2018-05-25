@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -15,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, AdapterView.OnItemClickListener {
 
     private ArrayList<Interval> intervals;
     private VideoView videoView;
@@ -31,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int tempStart;
     private int tempEnd;
     private boolean started;
+    private Interval currInterval;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +56,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 int max = playback.getMax();
                 int curr = max*videoView.getCurrentPosition()/videoView.getDuration();
                 playback.setProgress(curr);
+
+                if(currInterval != null) {
+                    int pos = videoView.getCurrentPosition();
+                    if(videoView.isPlaying() && pos > currInterval.getEnd()) {
+                        videoView.pause();
+                        currInterval = null;
+                    }
+                }
             }
         }, 0, 500);
 
         this.intervals = new ArrayList<>();
         adapter = new IntervalArrayAdapter(this,intervals);
         intervalList.setAdapter(adapter);
+        intervalList.setOnItemClickListener(this);
 
         startButton = (ImageButton)findViewById(R.id.start_button);
         stopButton = (ImageButton)findViewById(R.id.stop_button);
@@ -86,8 +97,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Interval newInterval = new Interval(tempStart,tempEnd);
             intervals.add(newInterval);
             adapter.notifyDataSetInvalidated();
+            tempStart = -1;
+            tempEnd = -1;
         } else if(v.getId() == R.id.cancel_button) {
-            Log.d("Button","Cancel button clicked!");
+            started = false;
+            tempStart = -1;
+            tempEnd = -1;
         }
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        currInterval = intervals.get(position);
+        videoView.seekTo((int)currInterval.getStart());
+        if(!videoView.isPlaying()) videoView.start();
     }
 }
