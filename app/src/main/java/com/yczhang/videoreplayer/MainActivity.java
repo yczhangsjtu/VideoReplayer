@@ -1,11 +1,5 @@
 package com.yczhang.videoreplayer;
 
-import android.net.Uri;
-import android.os.Environment;
-import android.os.ResultReceiver;
-import android.support.v4.media.session.MediaControllerCompat;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,23 +11,26 @@ import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.VideoView;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-
     private ArrayList<Interval> intervals;
     private VideoView videoView;
     private MediaController controller;
     private ListView intervalList;
+    private IntervalArrayAdapter adapter;
     private ImageButton startButton;
     private ImageButton stopButton;
     private ImageButton cancelButton;
     private Timer autoProgressTimer;
     private ProgressBar playback;
+
+    private int tempStart;
+    private int tempEnd;
+    private boolean started;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +58,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }, 0, 500);
 
         this.intervals = new ArrayList<>();
-        intervalList.setAdapter(new IntervalArrayAdapter(this,intervals));
+        adapter = new IntervalArrayAdapter(this,intervals);
+        intervalList.setAdapter(adapter);
 
         startButton = (ImageButton)findViewById(R.id.start_button);
         stopButton = (ImageButton)findViewById(R.id.stop_button);
@@ -77,9 +75,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if(v.getId() == R.id.start_button) {
-            Log.d("Button","Start button clicked!");
+            started = true;
+            tempStart = videoView.getCurrentPosition();
+            tempEnd = -1;
+            if(!videoView.isPlaying())
+                videoView.start();
         } else if(v.getId() == R.id.stop_button) {
-            Log.d("Button","Stop button clicked!");
+            started = false;
+            tempEnd = videoView.getCurrentPosition();
+            Interval newInterval = new Interval(tempStart,tempEnd);
+            intervals.add(newInterval);
+            adapter.notifyDataSetInvalidated();
         } else if(v.getId() == R.id.cancel_button) {
             Log.d("Button","Cancel button clicked!");
         }
