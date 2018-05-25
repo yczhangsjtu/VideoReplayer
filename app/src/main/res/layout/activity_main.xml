@@ -12,19 +12,33 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <ProgressBar
-        android:id="@+id/playback"
-        style="?android:attr/progressBarStyleHorizontal"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:max="@integer/playback_max"
-        android:progress="0" />
+        android:orientation="horizontal">
+
+        <ProgressBar
+            android:id="@+id/playback"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="@integer/playback_max"
+            android:progress="0" />
+
+        <TextView
+            android:id="@+id/current_position"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="5" />
+    </LinearLayout>
 
 
     <ImageView
         android:id="@+id/bar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/bar_height" />
+        android:layout_height="@dimen/bar_height"
+        android:contentDescription="@string/bar_description" />
 
     <LinearLayout
         android:id="@+id/control_panel"
@@ -57,9 +71,26 @@
             app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
     </LinearLayout>
 
-    <ListView
-        android:id="@+id/interval_list"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"></ListView>
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <ListView
+            android:id="@+id/interval_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+        </ListView>
+
+        <ListView
+            android:id="@+id/video_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+    </LinearLayout>
 
 </LinearLayout>

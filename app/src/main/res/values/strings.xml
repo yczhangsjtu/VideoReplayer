@@ -3,4 +3,5 @@
     <string name="start_button_desc">Mark the start of interval.</string>
     <string name="stop_button_disc">Mark the end of interval.</string>
     <string name="cancel_button_disc">Cancel the current interval.</string>
+    <string name="bar_description">A bar showing the status of interval.</string>
 </resources>

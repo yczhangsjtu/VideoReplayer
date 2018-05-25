@@ -29,7 +29,7 @@ public class Interval {
         return formatTime(end);
     }
 
-    private static String formatTime(long t) {
+    public static String formatTime(long t) {
         long rem = t%1000;
         t = t/1000;
         return String.format("%d:%d%d:%d%d.%d%d%d",

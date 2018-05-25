@@ -4,25 +4,27 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.provider.ContactsContract;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.MediaController;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.VideoView;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -32,15 +34,18 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, AdapterView.OnItemClickListener {
 
     private ArrayList<Interval> intervals;
+    private ArrayList<String> videos;
     private VideoView videoView;
     private MediaController controller;
     private ListView intervalList;
-    private IntervalArrayAdapter adapter;
+    private ListView fileList;
+    private IntervalArrayAdapter intervalArrayAdapter;
     private ImageButton startButton;
     private ImageButton stopButton;
     private ImageButton cancelButton;
     private Timer autoProgressTimer;
     private ProgressBar playback;
+    private TextView currentPosition;
     private Canvas canvas;
     private Paint paint;
     private Bitmap bitmap;
@@ -52,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Interval currInterval;
 
     private String filename;
+    private Handler h;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         videoView = (VideoView)findViewById(R.id.video_view);
         controller = new MediaController(this);
         intervalList = (ListView)findViewById(R.id.interval_list);
+        fileList = (ListView)findViewById(R.id.video_list);
 
         controller.setAnchorView(videoView);
         videoView.setMediaController(controller);
@@ -69,28 +76,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         paint = new Paint();
 
         playback = (ProgressBar)findViewById(R.id.playback);
+        currentPosition = (TextView)findViewById(R.id.current_position);
         autoProgressTimer = new Timer();
-        autoProgressTimer.scheduleAtFixedRate(new TimerTask() {
+
+        class MyHandler extends Handler {
             @Override
-            public void run() {
+            public void handleMessage(Message msg) {
                 int max = playback.getMax();
-                int curr = max*videoView.getCurrentPosition()/videoView.getDuration();
+                int pos = videoView.getCurrentPosition();
+                int curr = max*pos/videoView.getDuration();
                 playback.setProgress(curr);
+                currentPosition.setText(Interval.formatTime(pos));
 
                 if(currInterval != null) {
-                    int pos = videoView.getCurrentPosition();
                     if(videoView.isPlaying() && pos > currInterval.getEnd()) {
                         videoView.pause();
                         currInterval = null;
                     }
                 }
-
+            }
+        }
+        h = new MyHandler();
+        autoProgressTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                h.sendEmptyMessage(0);
             }
         }, 500, 500);
 
         this.intervals = new ArrayList<>();
-        adapter = new IntervalArrayAdapter(this,intervals);
-        intervalList.setAdapter(adapter);
+        intervalArrayAdapter = new IntervalArrayAdapter(this,intervals);
+        intervalList.setAdapter(intervalArrayAdapter);
         intervalList.setOnItemClickListener(this);
 
         startButton = (ImageButton)findViewById(R.id.start_button);
@@ -101,7 +117,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         stopButton.setOnClickListener(this);
         cancelButton.setOnClickListener(this);
 
-        open("test");
+        File path = getFilesDir();
+        String[] files = path.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".mp4");
+            }
+        });
+        videos = new ArrayList<>();
+        for(String s: files) {
+            videos.add(s.substring(0,s.length()-4));
+        }
+
+        FileArrayAdapter fileAdapter = new FileArrayAdapter(this, videos);
+        fileList.setAdapter(fileAdapter);
+        fileList.setOnItemClickListener(this);
     }
 
     @Override
@@ -110,6 +140,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             started = true;
             tempStart = videoView.getCurrentPosition();
             tempEnd = -1;
+            currInterval = null;
             if(!videoView.isPlaying())
                 videoView.start();
         } else if(v.getId() == R.id.stop_button) {
@@ -117,10 +148,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             tempEnd = videoView.getCurrentPosition();
             Interval newInterval = new Interval(tempStart,tempEnd);
             intervals.add(newInterval);
-            adapter.notifyDataSetInvalidated();
+            intervalArrayAdapter.notifyDataSetInvalidated();
             save();
             tempStart = -1;
             tempEnd = -1;
+            currInterval = null;
         } else if(v.getId() == R.id.cancel_button) {
             started = false;
             tempStart = -1;
@@ -133,12 +165,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        tempStart = -1;
-        tempEnd = -1;
-        started = false;
-        currInterval = intervals.get(position);
-        videoView.seekTo((int)currInterval.getStart());
-        if(!videoView.isPlaying()) videoView.start();
+        if(parent.getId() == R.id.interval_list) {
+            tempStart = -1;
+            tempEnd = -1;
+            started = false;
+            currInterval = intervals.get(position);
+            videoView.seekTo((int) currInterval.getStart());
+            if (!videoView.isPlaying()) {
+                videoView.start();
+            }
+        } else if(parent.getId() == R.id.video_list) {
+            open(videos.get(position));
+        }
         draw();
     }
 
@@ -169,23 +207,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         File path = getFilesDir();
         File file = new File(path,filename+".txt");
 
+        intervals.clear();
         try {
             FileInputStream stream = new FileInputStream(file);
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
             String line;
-            intervals.clear();
             while((line = reader.readLine()) != null) {
                 try {
                     Interval interval = Interval.fromString(line);
                     intervals.add(interval);
                 } catch (Exception e) {
-
+                    e.printStackTrace();
                 }
             }
-            adapter.notifyDataSetInvalidated();
         } catch (IOException e) {
-
+            e.printStackTrace();
         }
+        intervalArrayAdapter.notifyDataSetInvalidated();
 
         videoView.start();
     }
