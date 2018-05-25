@@ -1,5 +1,11 @@
 package com.yczhang.videoreplayer;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.provider.ContactsContract;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -7,6 +13,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.MediaController;
 import android.widget.ProgressBar;
@@ -28,6 +35,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ImageButton cancelButton;
     private Timer autoProgressTimer;
     private ProgressBar playback;
+    private Canvas canvas;
+    private Paint paint;
+    private Bitmap bitmap;
+    private ImageView bar;
 
     private int tempStart;
     private int tempEnd;
@@ -48,6 +59,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         videoView.setMediaController(controller);
         videoView.getCurrentPosition();
 
+        bar = (ImageView)findViewById(R.id.bar);
+        paint = new Paint();
+
         playback = (ProgressBar)findViewById(R.id.playback);
         autoProgressTimer = new Timer();
         autoProgressTimer.scheduleAtFixedRate(new TimerTask() {
@@ -64,8 +78,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         currInterval = null;
                     }
                 }
+
             }
-        }, 0, 500);
+        }, 500, 500);
 
         this.intervals = new ArrayList<>();
         adapter = new IntervalArrayAdapter(this,intervals);
@@ -103,13 +118,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             started = false;
             tempStart = -1;
             tempEnd = -1;
+            currInterval = null;
         }
+
+        if(bitmap == null) {
+            Log.d("Width",""+bar.getWidth());
+            Log.d("Height",""+bar.getHeight());
+            bitmap = Bitmap.createBitmap(bar.getWidth(),bar.getHeight(),Bitmap.Config.ARGB_8888);
+            bar.setImageBitmap(bitmap);
+            canvas = new Canvas(bitmap);
+        }
+        draw();
     }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        tempStart = -1;
+        tempEnd = -1;
+        started = false;
         currInterval = intervals.get(position);
         videoView.seekTo((int)currInterval.getStart());
         if(!videoView.isPlaying()) videoView.start();
+        draw();
+    }
+
+    private void draw() {
+        canvas.drawColor(ResourcesCompat.getColor(getResources(),R.color.background,null));
+        paint.setColor(ResourcesCompat.getColor(getResources(),R.color.foreground,null));
+        if(started) {
+            int x = bar.getWidth() * tempStart/videoView.getDuration();
+            Rect rect = new Rect(x, 0, bar.getWidth(), bar.getHeight());
+            canvas.drawRect(rect,paint);
+        } else if(currInterval != null) {
+            int x1 = bar.getWidth() * (int)currInterval.getStart()/videoView.getDuration();
+            int x2 = bar.getWidth() * (int)currInterval.getEnd()/videoView.getDuration();
+            Rect rect = new Rect(x1, 0, x2, bar.getHeight());
+            canvas.drawRect(rect,paint);
+        }
     }
 }
