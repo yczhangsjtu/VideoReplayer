@@ -36,4 +36,18 @@ public class Interval {
                 t/3600,(t%3600)/600,((t%3600)/60)%10,(t%60)/10,t%10,
                 rem/100,(rem/10)%10,rem%10);
     }
+
+    @Override
+    public String toString() {
+        return start+","+end;
+    }
+
+    public static Interval fromString(String s) throws Exception {
+        int i = s.indexOf(',');
+        if(i < 0) throw new Exception("Invalid interval string");
+        long a = Long.parseLong(s.substring(0,i));
+        long b = Long.parseLong(s.substring(i+1));
+        if(a > b) throw new Exception("Invalid interval: start > end");
+        return new Interval(a,b);
+    }
 }

@@ -19,6 +19,12 @@ import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.VideoView;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -45,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean started;
     private Interval currInterval;
 
+    private String filename;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,10 +62,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         controller = new MediaController(this);
         intervalList = (ListView)findViewById(R.id.interval_list);
 
-        videoView.setVideoPath(getFilesDir().getAbsolutePath()+"/test.mp4");
         controller.setAnchorView(videoView);
         videoView.setMediaController(controller);
-        videoView.getCurrentPosition();
 
         bar = (ImageView)findViewById(R.id.bar);
         paint = new Paint();
@@ -95,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         stopButton.setOnClickListener(this);
         cancelButton.setOnClickListener(this);
 
-        videoView.start();
+        open("test");
     }
 
     @Override
@@ -112,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Interval newInterval = new Interval(tempStart,tempEnd);
             intervals.add(newInterval);
             adapter.notifyDataSetInvalidated();
+            save();
             tempStart = -1;
             tempEnd = -1;
         } else if(v.getId() == R.id.cancel_button) {
@@ -121,13 +128,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             currInterval = null;
         }
 
-        if(bitmap == null) {
-            Log.d("Width",""+bar.getWidth());
-            Log.d("Height",""+bar.getHeight());
-            bitmap = Bitmap.createBitmap(bar.getWidth(),bar.getHeight(),Bitmap.Config.ARGB_8888);
-            bar.setImageBitmap(bitmap);
-            canvas = new Canvas(bitmap);
-        }
         draw();
     }
 
@@ -143,6 +143,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void draw() {
+        if(bitmap == null) {
+            bitmap = Bitmap.createBitmap(bar.getWidth(),bar.getHeight(),Bitmap.Config.ARGB_8888);
+            bar.setImageBitmap(bitmap);
+            canvas = new Canvas(bitmap);
+        }
         canvas.drawColor(ResourcesCompat.getColor(getResources(),R.color.background,null));
         paint.setColor(ResourcesCompat.getColor(getResources(),R.color.foreground,null));
         if(started) {
@@ -154,6 +159,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             int x2 = bar.getWidth() * (int)currInterval.getEnd()/videoView.getDuration();
             Rect rect = new Rect(x1, 0, x2, bar.getHeight());
             canvas.drawRect(rect,paint);
+        }
+    }
+
+    private void open(String filename) {
+        videoView.setVideoPath(getFilesDir().getAbsolutePath()+"/"+filename+".mp4");
+        this.filename = filename;
+
+        File path = getFilesDir();
+        File file = new File(path,filename+".txt");
+
+        try {
+            FileInputStream stream = new FileInputStream(file);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            String line;
+            intervals.clear();
+            while((line = reader.readLine()) != null) {
+                try {
+                    Interval interval = Interval.fromString(line);
+                    intervals.add(interval);
+                } catch (Exception e) {
+
+                }
+            }
+            adapter.notifyDataSetInvalidated();
+        } catch (IOException e) {
+
+        }
+
+        videoView.start();
+    }
+
+    private void save() {
+        File path = getFilesDir();
+        File file = new File(path,filename+".txt");
+        try {
+            FileOutputStream stream = new FileOutputStream(file);
+            for(Interval interval: intervals) {
+                stream.write(interval.toString().getBytes());
+                stream.write("\n".getBytes());
+                Log.d("Save",interval.toString());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
