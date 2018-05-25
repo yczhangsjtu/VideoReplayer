@@ -4,4 +4,7 @@
     <string name="stop_button_disc">Mark the end of interval.</string>
     <string name="cancel_button_disc">Cancel the current interval.</string>
     <string name="bar_description">A bar showing the status of interval.</string>
+    <string name="play_button_desc">Start playing button.</string>
+    <string name="pause_button_desc">Pause the video.</string>
+    <string name="back_button_desc">Let video go back a little.</string>
 </resources>

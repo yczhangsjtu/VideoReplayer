@@ -43,6 +43,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ImageButton startButton;
     private ImageButton stopButton;
     private ImageButton cancelButton;
+    private ImageButton playButton;
+    private ImageButton pauseButton;
+    private ImageButton backButton;
     private Timer autoProgressTimer;
     private ProgressBar playback;
     private TextView currentPosition;
@@ -112,10 +115,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         startButton = (ImageButton)findViewById(R.id.start_button);
         stopButton = (ImageButton)findViewById(R.id.stop_button);
         cancelButton = (ImageButton)findViewById(R.id.cancel_button);
+        playButton = (ImageButton)findViewById(R.id.play_button);
+        pauseButton = (ImageButton)findViewById(R.id.pause_button);
+        backButton = (ImageButton)findViewById(R.id.back_button);
 
         startButton.setOnClickListener(this);
         stopButton.setOnClickListener(this);
         cancelButton.setOnClickListener(this);
+        playButton.setOnClickListener(this);
+        pauseButton.setOnClickListener(this);
+        backButton.setOnClickListener(this);
 
         File path = getFilesDir();
         String[] files = path.list(new FilenameFilter() {
@@ -132,6 +141,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         FileArrayAdapter fileAdapter = new FileArrayAdapter(this, videos);
         fileList.setAdapter(fileAdapter);
         fileList.setOnItemClickListener(this);
+
+        if(files.length > 0) {
+            open(videos.get(0));
+        }
     }
 
     @Override
@@ -158,6 +171,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             tempStart = -1;
             tempEnd = -1;
             currInterval = null;
+        } else if(v.getId() == R.id.play_button) {
+            if(!videoView.isPlaying())
+                videoView.start();
+        } else if(v.getId() == R.id.pause_button) {
+            if(videoView.isPlaying())
+                videoView.pause();
+        } else if(v.getId() == R.id.back_button) {
+            int pos = videoView.getCurrentPosition();
+            pos -= 1000;
+            if(pos < 0) pos = 0;
+            videoView.seekTo(pos);
         }
 
         draw();
@@ -176,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         } else if(parent.getId() == R.id.video_list) {
             open(videos.get(position));
+            videoView.start();
         }
         draw();
     }
@@ -224,8 +249,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             e.printStackTrace();
         }
         intervalArrayAdapter.notifyDataSetInvalidated();
-
-        videoView.start();
     }
 
     private void save() {
@@ -236,7 +259,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             for(Interval interval: intervals) {
                 stream.write(interval.toString().getBytes());
                 stream.write("\n".getBytes());
-                Log.d("Save",interval.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();
