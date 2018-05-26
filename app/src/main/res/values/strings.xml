@@ -7,4 +7,6 @@
     <string name="play_button_desc">Start playing button.</string>
     <string name="pause_button_desc">Pause the video.</string>
     <string name="back_button_desc">Let video go back a little.</string>
+    <string name="delete">Delete</string>
+    <string name="add_button_desc">Add video file.</string>
 </resources>

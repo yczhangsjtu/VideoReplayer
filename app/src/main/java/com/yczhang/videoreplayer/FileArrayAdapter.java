@@ -13,9 +13,9 @@ public class FileArrayAdapter extends BaseAdapter {
 
     private Context context;
     private LayoutInflater inflater;
-    private ArrayList<String> data;
+    private ArrayList<FileItem> data;
 
-    public FileArrayAdapter(Context context, ArrayList<String> items) {
+    public FileArrayAdapter(Context context, ArrayList<FileItem> items) {
         this.context = context;
         this.data = items;
         inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -40,7 +40,7 @@ public class FileArrayAdapter extends BaseAdapter {
     public View getView(int position, View convertView, ViewGroup parent) {
         View view = inflater.inflate(R.layout.file_item, parent, false);
         TextView text = view.findViewById(R.id.file_name);
-        text.setText(data.get(position));
+        text.setText(data.get(position).getTitle());
         return view;
     }
 }

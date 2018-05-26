@@ -2,4 +2,6 @@
 <resources>
     <dimen name="bar_height">30dp</dimen>
     <dimen name="panel_height">50dp</dimen>
+    <dimen name="video_min_width">550dp</dimen>
+    <dimen name="video_min_height">300dp</dimen>
 </resources>
