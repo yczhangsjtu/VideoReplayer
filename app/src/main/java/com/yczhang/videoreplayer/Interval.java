@@ -32,9 +32,9 @@ public class Interval {
     public static String formatTime(long t) {
         long rem = t%1000;
         t = t/1000;
-        return String.format("%d:%d%d:%d%d.%d%d%d",
+        return String.format("%d:%d%d:%d%d.%d",
                 t/3600,(t%3600)/600,((t%3600)/60)%10,(t%60)/10,t%10,
-                rem/100,(rem/10)%10,rem%10);
+                rem/100);
     }
 
     @Override

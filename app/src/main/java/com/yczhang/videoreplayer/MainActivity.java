@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void run() {
                 h.sendEmptyMessage(0);
             }
-        }, 500, 500);
+        }, 0, 100);
 
         this.intervals = new ArrayList<>();
         intervalArrayAdapter = new IntervalArrayAdapter(this,intervals);

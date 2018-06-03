@@ -41,8 +41,10 @@ public class IntervalArrayAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View view = inflater.inflate(R.layout.interval_item, parent, false);
+        TextView number = (TextView) view.findViewById(R.id.interval_number);
         TextView start = (TextView) view.findViewById(R.id.interval_start);
         TextView end = (TextView) view.findViewById(R.id.interval_end);
+        number.setText(""+(position+1));
         start.setText(data.get(position).getStartString());
         end.setText(data.get(position).getEndString());
         return view;
